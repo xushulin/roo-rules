@@ -98,7 +98,7 @@ python -c "import tempfile,time; print(tempfile.gettempdir() + '/roo_cmd_' + str
 
 ### 六、日志文件清理
 
-临时日志文件属于"执行命令过程中产生的临时产物"，应遵循已有的 [`cleanup-temp-scripts.md`](cleanup-temp-scripts.md) 规则：
+临时日志文件属于"执行命令过程中产生的临时产物"，应遵循已有的 [`cleanup-temp-rules.md`](cleanup-temp-rules.md) 规则：
 
 - 任务完成后**必须删除**不再需要的临时日志文件
 - 若日志中包含有价值的诊断信息（如某次失败的完整堆栈），可在向用户报告后删除

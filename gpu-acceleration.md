@@ -180,4 +180,4 @@ nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv
 
 - 本规则与 [`environment-config.md`](.roo/rules/environment-config.md) 互补：环境配置规则定义基础运行时（Python/JDK/Android SDK），本规则定义 GPU 加速环境的检测与配置
 - 本规则与 [`testing-requirements.md`](.roo/rules/testing-requirements.md) 协同：若测试脚本涉及深度学习模型，必须遵循本规则的 GPU 检测流程
-- 本规则与 [`cleanup-temp-scripts.md`](cleanup-temp-scripts.md) 一致：GPU 配置脚本若为一次性使用，完成后需清理
+- 本规则与 [`cleanup-temp-rules.md`](cleanup-temp-rules.md) 一致：GPU 配置脚本若为一次性使用，完成后需清理
