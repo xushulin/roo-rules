@@ -50,12 +50,17 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 
 **Windows (cmd.exe)**：
 ```
-(你的原始命令) > "%TEMP%\roo_cmd_<timestamp>.log" 2>&1
+(你的原始命令) > "temp\roo_cmd_<timestamp>.log" 2>&1
 ```
 
 **macOS / Linux**：
 ```
-(你的原始命令) > /tmp/roo_cmd_$(date +%s).log 2>&1
+(你的原始命令) > temp/roo_cmd_$(date +%s).log 2>&1
+```
+
+**PowerShell（跨平台）**：
+```
+(你的原始命令) > temp/roo_cmd_$(Get-Date -UFormat "%s").log 2>&1
 ```
 
 `2>&1` 确保 stderr 和 stdout 都写入同一个日志文件，不会遗漏任何输出。
@@ -64,18 +69,18 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 
 | 要素 | 说明 |
 |------|------|
-| **目录** | Windows 使用 `%TEMP%`，macOS/Linux 使用 `/tmp/`（或 `$TMPDIR`） |
+| **目录** | 统一使用项目根目录下的 `temp/` 子目录 |
 | **前缀** | 统一使用 `roo_cmd_`，便于识别和批量清理 |
 | **时间戳** | 使用精确到秒的时间戳，避免同名冲突 |
-| **示例** | `roo_cmd_1719400000.log` |
+| **示例** | `temp/roo_cmd_1719400000.log` |
 
 #### 3.3 多平台兼容写法
 
-若不确定目标平台，可使用以下兼容写法（优先使用系统临时目录环境变量）：
+若不确定目标平台，可使用以下兼容写法：
 
 ```bash
-# 跨平台 Python 一行生成日志路径
-python -c "import tempfile,time; print(tempfile.gettempdir() + '/roo_cmd_' + str(int(time.time())) + '.log')"
+# 跨平台 Python 一行生成日志路径（相对于项目根目录）
+python -c "import time; print('temp/roo_cmd_' + str(int(time.time())) + '.log')"
 ```
 
 ### 四、命令完成后的操作流程
@@ -108,12 +113,12 @@ python -c "import tempfile,time; print(tempfile.gettempdir() + '/roo_cmd_' + str
 
 **Windows**：
 ```
-del %TEMP%\roo_cmd_*.log
+del temp\roo_cmd_*.log
 ```
 
 **macOS / Linux**：
 ```
-rm /tmp/roo_cmd_*.log
+rm temp/roo_cmd_*.log
 ```
 
 ### 七、禁止行为
@@ -123,7 +128,6 @@ rm /tmp/roo_cmd_*.log
 - ❌ 命令超时后不检查日志文件内容
 - ❌ 任务完成后不清理临时日志文件
 - ❌ 对简单秒级命令画蛇添足地重定向（增加不必要的文件 I/O）
-- ❌ 将日志文件写入项目目录（污染工作区，且有被误提交到 Git 的风险）
 
 ### 八、自检清单
 
@@ -132,5 +136,5 @@ rm /tmp/roo_cmd_*.log
 - [ ] 该命令预计耗时是否超过 30 秒？
 - [ ] 该命令的输出是否对后续决策至关重要？
 - [ ] 若以上两者皆满足，是否已在命令中添加了重定向？
-- [ ] 日志文件路径是否使用了系统临时目录（而非项目目录）？
+- [ ] 日志文件路径是否已使用项目 `temp/` 子目录？
 - [ ] 任务结束时是否清理了临时日志文件？
