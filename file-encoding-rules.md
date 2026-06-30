@@ -13,6 +13,8 @@
 | 场景 | 正确做法 | 禁止做法 |
 |------|---------|---------|
 | PowerShell 写文本 | `[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)` | `Out-File -Encoding default`、`Set-Content`（默认 ASCII） |
+| PowerShell 重定向输出 | `\| Out-File -Encoding UTF8` | 裸 `>`（默认编码为 UTF-16 LE） |
+| cmd.exe 重定向输出 | 先执行 `chcp 65001` 将控制台代码页切换为 UTF-8，再用 `>` 重定向 | 在 GBK 代码页下将含中文的输出重定向到文件 |
 | Git 提取历史文件 | `git cat-file blob <rev>:<path> > <dest>` | `git show <rev>:<path> \| Out-File`（管道会破坏二进制字节） |
 | 各语言代码写文件 | 明确指定 UTF-8（Kotlin/Java 用 `Charsets.UTF_8`，Python 用 `encoding='utf-8'`） | 依赖平台默认 charset |
 

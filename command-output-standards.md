@@ -42,15 +42,24 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 | 快速查询 | `python -c "print(...)"`、`git log --oneline -5` |
 | 秒级完成的操作 | `mkdir`、`copy`、`move` |
 
-### 三、重定向方式
+### 三、终端编码规范（前置步骤）
 
-#### 3.1 命令模板
+**在执行任何重定向之前，必须先确保终端输出编码为 UTF-8。** 具体规则见 [`terminal-encoding-rules.md`](terminal-encoding-rules.md)。
+
+简记：
+
+- **cmd.exe**：命令前加 `chcp 65001 > nul &&`
+- **PowerShell**：命令前加 `powershell -NoProfile -Command "[Console]::OutputEncoding = [Text.Encoding]::UTF8; ..."`
+
+### 四、重定向方式
+
+#### 4.1 命令模板
 
 在 [`execute_command`]() 的 `command` 参数中，将命令写为以下形式：
 
 **Windows (cmd.exe)**：
 ```
-(你的原始命令) > "temp\roo_cmd_<timestamp>.log" 2>&1
+chcp 65001 > nul && (你的原始命令) > "temp\roo_cmd_<timestamp>.log" 2>&1
 ```
 
 **macOS / Linux**：
@@ -60,12 +69,12 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 
 **PowerShell（跨平台）**：
 ```
-(你的原始命令) > temp/roo_cmd_$(Get-Date -UFormat "%s").log 2>&1
+powershell -NoProfile -Command "[Console]::OutputEncoding = [Text.Encoding]::UTF8; (你的原始命令) | Out-File -Encoding UTF8 temp/roo_cmd_$(Get-Date -UFormat '%s').log"
 ```
 
-`2>&1` 确保 stderr 和 stdout 都写入同一个日志文件，不会遗漏任何输出。
+> **注意**：PowerShell 中 `>` 等价于 `| Out-File`，默认编码为 **UTF-16 LE**，会导致后续以 UTF-8 读取时乱码。**必须**显式使用 `| Out-File -Encoding UTF8`。
 
-#### 3.2 日志文件命名约定
+#### 4.2 日志文件命名约定
 
 | 要素 | 说明 |
 |------|------|
@@ -74,7 +83,7 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 | **时间戳** | 使用精确到秒的时间戳，避免同名冲突 |
 | **示例** | `temp/roo_cmd_1719400000.log` |
 
-#### 3.3 多平台兼容写法
+#### 4.3 多平台兼容写法
 
 若不确定目标平台，可使用以下兼容写法：
 
@@ -83,7 +92,7 @@ Agent 在 [`execute_command`]() 执行期间处于阻塞状态，无法实时读
 python -c "import time; print('temp/roo_cmd_' + str(int(time.time())) + '.log')"
 ```
 
-### 四、命令完成后的操作流程
+### 五、命令完成后的操作流程
 
 命令执行后（无论是正常完成还是超时），**必须**按以下步骤处理：
 
@@ -93,7 +102,7 @@ python -c "import time; print('temp/roo_cmd_' + str(int(time.time())) + '.log')"
 4. **基于日志决策**：根据日志内容决定下一步行动（修复错误 / 继续 / 向用户报告）
 5. **清理日志文件**：任务结束时删除临时日志，见第六节
 
-### 五、超时处理
+### 六、超时处理
 
 若命令设置了 `timeout` 参数且触发了超时：
 
@@ -101,7 +110,7 @@ python -c "import time; print('temp/roo_cmd_' + str(int(time.time())) + '.log')"
 2. Agent **必须**读取日志文件以了解命令在超时前做了什么、输出了什么
 3. 基于日志内容判断是延长 timeout 重试还是改变策略
 
-### 六、日志文件清理
+### 七、日志文件清理
 
 临时日志文件属于"执行命令过程中产生的临时产物"，应遵循已有的 [`cleanup-temp-rules.md`](cleanup-temp-rules.md) 规则：
 
@@ -121,7 +130,7 @@ del temp\roo_cmd_*.log
 rm temp/roo_cmd_*.log
 ```
 
-### 七、禁止行为
+### 八、禁止行为
 
 - ❌ 对预计超过 30 秒的关键命令不重定向输出，导致输出丢失
 - ❌ 重定向后不读取日志文件就直接进行下一步决策
@@ -129,7 +138,7 @@ rm temp/roo_cmd_*.log
 - ❌ 任务完成后不清理临时日志文件
 - ❌ 对简单秒级命令画蛇添足地重定向（增加不必要的文件 I/O）
 
-### 八、自检清单
+### 九、自检清单
 
 每次通过 [`execute_command`]() 执行命令前，自问：
 
